@@ -3,6 +3,7 @@ import time
 import requests 
 import re 
 import os
+import pandas as pd
 
 class CraigslistScraper:
     def __init__(self):
@@ -38,13 +39,18 @@ class CraigslistScraper:
         """
         Function to read saved HTML files.
         """
+        data = []  # Initialize an empty list to collect the data
         for filename in os.listdir(self.urls_directory):
             if filename.endswith(".html"):
                 filepath = os.path.join(self.urls_directory, filename)
                 id = re.findall('./urls/(.*).html',filepath)[0]
                 with open(filepath, 'r', encoding='utf-8') as file:
                     html = file.read()
-                    self.extract_information(html,id)
+                    info = self.extract_information(html,id)  # Get the information as a dictionary
+                    data.append(info)  # Add the dictionary to the list
+
+        df = pd.DataFrame(data)  # Convert the list of dictionaries into a DataFrame
+        return df
 
     def extract_information(self, page, id):
         """
@@ -60,17 +66,19 @@ class CraigslistScraper:
         posted_date= re.findall('(\d{4}-\d{2}-\d{2})T.*',posted_date)[0]
         last_updated_date = re.findall('(\d{4}-\d{2}-\d{2})T.*',soup.find('div',class_='postinginfos').select('p')[2].select('time')[0].get('datetime'))[0] if len(re.findall('updated',soup.find('div',class_='postinginfos').select('p')[2].text))>0 else "Date not available!"
 
-        print(f"For HTML File ID: {id}\n")
-        print(f"Title of the listing: {title}\n")
-        print(f"The URL of the first image: {img_url}\n") if img_url is not None else print("Image not found for this url!\n")
-        print(f"The description of the listing: {des}\n") 
-        print(f"The Post ID: {post_id}\n")
-        print(f"The posted date of the listing: {posted_date}\n")
-        print(f"The last updated date of the listing: {last_updated_date}\n")
-        print("\n\n")
+        # Return the information as a dictionary
+        return {
+            'title': title,
+            'first_image_url': img_url,
+            'description': des,
+            'post_id': post_id,
+            'posted_date': posted_date,
+            'recent_update_date': last_updated_date
+        }
 
 if __name__ == "__main__":
     scraper = CraigslistScraper()
-    top_250_urls = scraper.fetch_top_250_url()
-    scraper.save_url(top_250_urls)
-    scraper.read_saved_html_files()
+    # top_250_urls = scraper.fetch_top_250_url()
+    # scraper.save_url(top_250_urls)
+    data=scraper.read_saved_html_files()
+
