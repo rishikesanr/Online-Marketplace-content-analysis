@@ -4,6 +4,12 @@ import requests
 import re 
 import os
 import pandas as pd
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+nltk.download('punkt')
+nltk.download('stopwords')
+from collections import Counter
 
 class CraigslistScraper:
     def __init__(self):
@@ -81,4 +87,18 @@ if __name__ == "__main__":
     # top_250_urls = scraper.fetch_top_250_url()
     # scraper.save_url(top_250_urls)
     data=scraper.read_saved_html_files()
+    print(data.head())
 
+#Join all the descriptions into one string
+all_descriptions = ' '.join(data['title'])
+
+#Now convert string tokens into words
+words = word_tokenize(all_descriptions)
+
+#Removing the stopwords and non-alphabetic words
+words = [word.lower() for word in words if word.isalpha() and word not in stopwords.words('english')]
+
+#Distribution of the words
+freq_dist = nltk.FreqDist(words)
+
+print(freq_dist.most_common(10))
